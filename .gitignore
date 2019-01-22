@@ -1,6 +1,7 @@
 /node_modules
 /tmp
 /cache/
+bits
 build
 /make_stamps
 docs/*.json
@@ -9,5 +10,5 @@ cscope.in.out
 cscope.po.out
 cscope.out
 man
-smf/manifests/waferlock.xml
 sapi_manifests/waferlock/manifest.json
+waferlock-pkg-*.tar.gz

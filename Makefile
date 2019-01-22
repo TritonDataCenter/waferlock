@@ -5,8 +5,10 @@
 #
 
 #
-# Copyright (c) 2018, Joyent, Inc.
+# Copyright (c) 2019, Joyent, Inc.
 #
+
+NAME = waferlock
 
 #
 # Tools
@@ -16,9 +18,11 @@ TAPE :=			./node_modules/.bin/tape
 #
 # Makefile.defs defines variables used as part of the build process.
 #
-include ./tools/mk/Makefile.defs
+ENGBLD_REQUIRE := $(shell git submodule update --init deps/eng)
+include ./deps/eng/tools/mk/Makefile.defs
+TOP ?= $(error Unable to access eng.git submodule Makefiles.)
 
-SAPI_MANIFESTS_IN =	sapi_manifests/waferlock/manifest.json.in
+SAPI_MANIFESTS_IN =	sapi_manifests/$(NAME)/manifest.json.in
 SAPI_MANIFESTS +=	$(SAPI_MANIFESTS_IN:%.in=%)
 CLEAN_FILES +=		$(SAPI_MANIFESTS_IN:%.in=%)
 
@@ -28,20 +32,20 @@ CLEAN_FILES +=		$(SAPI_MANIFESTS_IN:%.in=%)
 #
 #DOC_FILES =		index.md boilerplateapi.md
 JSON_FILES =		package.json $(SAPI_MANIFESTS)
-JS_FILES :=		$(shell find lib test -name '*.js') server.js
+JS_FILES :=		$(shell find lib -name '*.js') server.js
 ESLINT_FILES =		$(JS_FILES)
 JSSTYLE_FILES =		$(JS_FILES)
 
 JSSTYLE_FLAGS =		-f tools/jsstyle.conf
 
-PREFIX ?=		/opt/smartdc/waferlock
+PREFIX ?=		/opt/smartdc/$(NAME)
 
 #
 # Configuration used by Makefile.smf.defs to generate "check" and "all" targets
 # for SMF manifest files.
 #
-SMF_MANIFESTS_IN =	smf/manifests/waferlock.xml.in
-include ./tools/mk/Makefile.smf.defs
+SMF_MANIFESTS =	smf/manifests/$(NAME).xml
+include ./deps/eng/tools/mk/Makefile.smf.defs
 
 #
 # Historically, Node packages that make use of binary add-ons must ship their
@@ -55,7 +59,7 @@ NODE_PREBUILT_VERSION =	v4.9.0
 NODE_PREBUILT_IMAGE = 18b094b0-eb01-11e5-80c1-175dac7ddf02
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_TAG = gz
-	include ./tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
 else
 	NODE := $(shell which node)
 	NPM := $(shell which npm)
@@ -68,16 +72,16 @@ endif
 # including this Makefile, we can depend on $(STAMP_NODE_MODULES) to drive "npm
 # install" correctly.
 #
-include ./tools/mk/Makefile.node_modules.defs
+include ./deps/eng/tools/mk/Makefile.node_modules.defs
 
 
 #
 # MG Variables
 #
 
-RELEASE_TARBALL         := waferlock-pkg-$(STAMP).tar.bz2
+RELEASE_TARBALL         := $(NAME)-pkg-$(STAMP).tar.gz
 ROOT                    := $(shell pwd)
-RELSTAGEDIR             := /tmp/$(STAMP)
+RELSTAGEDIR             := /tmp/$(NAME)-$(STAMP)
 
 #
 # Repo-specific targets
@@ -120,7 +124,7 @@ release: all
 	cp -r \
 		$(ROOT)/build/node \
 		$(RELSTAGEDIR)/root/$(PREFIX)/build
-	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	(cd $(RELSTAGEDIR) && $(TAR) -I pigz -cf $(ROOT)/$(RELEASE_TARBALL) root site)
 	rm -rf $(RELSTAGEDIR)
 
 
@@ -130,25 +134,25 @@ publish: release
 		@echo "error: 'BITS_DIR' must be set for 'publish' target"; \
 		exit 1; \
 	fi
-	mkdir -p $(BITS_DIR)/waferlock
-	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/waferlock/$(RELEASE_TARBALL)
+	mkdir -p $(BITS_DIR)/$(NAME)
+	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
 #
 # Target definitions.  This is where we include the target Makefiles for
 # the "defs" Makefiles we included above.
 #
 
-include ./tools/mk/Makefile.deps
+include ./deps/eng/tools/mk/Makefile.deps
 
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.targ
 else
-	include ./tools/mk/Makefile.node.targ
+	include ./deps/eng/tools/mk/Makefile.node.targ
 endif
 
-include ./tools/mk/Makefile.smf.targ
-include ./tools/mk/Makefile.node_modules.targ
-include ./tools/mk/Makefile.targ
+include ./deps/eng/tools/mk/Makefile.smf.targ
+include ./deps/eng/tools/mk/Makefile.node_modules.targ
+include ./deps/eng/tools/mk/Makefile.targ
 
 $(SAPI_MANIFESTS): %: %.in
 	$(SED) \
