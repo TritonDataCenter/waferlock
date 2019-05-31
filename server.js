@@ -5,13 +5,12 @@
  */
 
 /*
- * Copyright (c) 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 'use strict';
 
 var mod_assert = require('assert-plus');
-var mod_verror = require('verror');
 var mod_bunyan = require('bunyan');
 var mod_fs = require('fs');
 var mod_util = require('util');
@@ -20,10 +19,8 @@ var mod_fsm = require('mooremachine');
 var mod_cueball = require('cueball');
 var mod_url = require('url');
 
-var lib_ipf = require('./lib/ipf');
-var Ipf = lib_ipf.Ipf;
-var IpfPool = lib_ipf.IpfPool;
-var IpMon = lib_ipf.IpMon;
+var lib_pghba = require('./lib/pg_hba');
+var PgHbaPool = lib_pghba.PgHbaPool;
 
 var lib_zk = require('./lib/zk');
 var ZKCache = lib_zk.ZKCache;
@@ -31,11 +28,9 @@ var ZKCache = lib_zk.ZKCache;
 var lib_sapi = require('./lib/sapi');
 var SapiPoller = lib_sapi.SapiPoller;
 
-var VError = mod_verror.VError;
-
 var confDir = mod_path.join(__dirname, 'etc');
 var confFile = mod_path.join(confDir, 'config.json');
-var ipfConfigFile = mod_path.join(confDir, 'ipf.conf');
+var pgHbaBaseFile = mod_path.join(confDir, 'pg_hba.conf');
 var config = JSON.parse(mod_fs.readFileSync(confFile, 'utf-8'));
 
 mod_assert.object(config, 'config');
@@ -49,6 +44,11 @@ mod_assert.number(config.sapiPollingInterval.min,
 mod_assert.number(config.sapiPollingInterval.max,
     'config.sapiPollingInterval.max');
 mod_assert.optionalString(config.shard, 'config.shard');
+mod_assert.object(config.pg_hba, 'config.pg_hba');
+mod_assert.string(config.pg_hba.path, 'config.pg_hba.path');
+mod_assert.string(config.pg_hba.pidFile, 'config.pg_hba.pidFile');
+mod_assert.number(config.pg_hba.statInterval, 'config.pg_hba.statInterval');
+mod_assert.number(config.pg_hba.hupInterval, 'config.pg_hba.hupInterval');
 
 mod_assert.optionalArrayOfString(config.paths, 'config.paths');
 mod_assert.optionalArrayOfString(config.domains, 'config.domains');
@@ -77,6 +77,7 @@ function AppFSM() {
 	this.af_denials = {};
 	this.af_log = log;
 	this.af_sapis = {};
+	this.af_pgHbaBase = null;
 
 	var agopts = {
 		spares: 1,
@@ -107,50 +108,33 @@ function AppFSM() {
 mod_util.inherits(AppFSM, mod_fsm.FSM);
 
 AppFSM.prototype.state_init = function (S) {
-	var self = this;
-	Ipf.flushAll(S.callback(function (err) {
-		if (err && err.name === 'IpfDisabledError') {
-			S.gotoState('enableIpf');
-			return;
-		}
-		if (err) {
-			self.af_err = new VError(
-			    { cause: err, name: 'IpfFlushError' },
-			    'failed to flush ipf rules');
-			S.gotoState('fatal');
-			return;
-		}
-		S.gotoState('setupPool');
-	}));
+	S.gotoState('readPgHbaBaseFile');
 };
 
-AppFSM.prototype.state_enableIpf = function (S) {
+AppFSM.prototype.state_readPgHbaBaseFile = function (S) {
 	var self = this;
-	Ipf.enable(S.callback(function (err) {
+	mod_fs.readFile(pgHbaBaseFile, S.callback(function (err, data) {
 		if (err) {
 			self.af_err = err;
 			S.gotoState('fatal');
 			return;
 		}
+		self.af_pgHbaBase = data.toString('ascii');
 		S.gotoState('setupPool');
 	}));
 };
 
 AppFSM.prototype.state_setupPool = function (S) {
-	var self = this;
-	this.af_pool = new IpfPool({
+	this.af_pool = new PgHbaPool({
 		log: log,
-		name: '100',
-		holdTime: config.holdTime
+		statInterval: config.pg_hba.statInterval,
+		hupInterval: config.pg_hba.hupInterval,
+		path: config.pg_hba.path,
+		pidFile: config.pg_hba.pidFile,
+		holdTime: config.holdTime,
+		baseText: this.af_pgHbaBase
 	});
-	this.af_pool.init(S.callback(function (err) {
-		if (err) {
-			self.af_err = err;
-			S.gotoState('fatal');
-			return;
-		}
-		S.gotoState('setupCache');
-	}));
+	S.gotoState('setupCache');
 };
 
 AppFSM.prototype.state_setupCache = function (S) {
@@ -213,59 +197,12 @@ AppFSM.prototype.state_setupSapi = function (S) {
 };
 
 AppFSM.prototype.state_loadRules = function (S) {
-	var self = this;
-	Ipf.loadRulesFile(ipfConfigFile, S.callback(function (err) {
-		if (err) {
-			self.af_err = err;
-			S.gotoState('fatal');
-			return;
-		}
-		S.gotoState('enforcing');
-	}));
+	S.gotoStateOn(this.af_pool, 'hupped', 'enforcing');
+	this.af_pool.start();
 };
 
-/* eslint-disable */
-/* JSSTYLED */
-var TUPLE_RE = / ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+),([0-9]+) -> ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+),([0-9]+) /;
-/* eslint-enable */
-
-AppFSM.prototype.state_enforcing = function (S) {
-	var self = this;
-	this.af_log.info('ipf rules loaded, now enforcing');
-	this.af_mon = new IpMon({
-		log: log
-	});
-	S.on(this.af_mon, 'line', function (line) {
-		var m = TUPLE_RE.exec(line);
-		if (!m) {
-			self.af_log.trace({ ipmonLine: line }, 'unparseable ' +
-			    'ipmon output line');
-			return;
-		}
-		var fromIp = m[1];
-		var fromPort = parseInt(m[2], 10);
-		var toIp = m[3];
-		var toPort = parseInt(m[4], 10);
-		if (typeof (fromPort) !== 'number' || !isFinite(fromPort) ||
-		    typeof (toPort) !== 'number' || !isFinite(toPort)) {
-			return;
-		}
-		var ds = self.af_denials[fromIp];
-		if (ds === undefined) {
-			ds = (self.af_denials[fromIp] = {});
-			Object.keys(self.af_sapis).forEach(function (k) {
-				self.af_sapis[k].trigger();
-			});
-		}
-		if (ds[toPort] === undefined) {
-			self.af_log.debug({ fromIp: fromIp, fromPort: fromPort,
-			    toIp: toIp, toPort: toPort },
-			    'denied access from %s to port %d',
-			    fromIp, toPort);
-			ds[toPort] = 0;
-		}
-		ds[toPort]++;
-	});
+AppFSM.prototype.state_enforcing = function (_S) {
+	this.af_log.info('pg_hba.conf reloaded, now enforcing');
 };
 
 AppFSM.prototype.state_fatal = function (S) {
@@ -276,12 +213,19 @@ AppFSM.prototype.state_fatal = function (S) {
 
 var app = new AppFSM();
 
-function disableIpfAndExit() {
-	if (app.af_mon && app.af_mon.isInState('running'))
-		app.af_mon.stop();
-	Ipf.disable(function () {
+function stopAndExit() {
+	if (app.af_pool && !app.af_pool.isInState('stopped')) {
+		log.info('shutting down pool, writing permissive pg_hba.conf');
+		app.af_pool.on('stateChanged', function (st) {
+			if (st === 'stopped') {
+				log.info('shut down');
+				process.exit(0);
+			}
+		});
+		app.af_pool.stop();
+	} else {
 		process.exit(0);
-	});
+	}
 }
-process.on('SIGINT', disableIpfAndExit);
-process.on('SIGTERM', disableIpfAndExit);
+process.on('SIGINT', stopAndExit);
+process.on('SIGTERM', stopAndExit);

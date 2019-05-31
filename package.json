@@ -26,7 +26,7 @@
     "ipaddr.js": "^1.7.0",
     "lstream": "0.0.4",
     "mooremachine": "^2.2.1",
-    "restify-clients": "^2.2.0",
+    "restify-clients": "2.2.0",
     "vasync": "^2.2.0",
     "verror": "^1.10.0",
     "zkstream": "^0.11.2"

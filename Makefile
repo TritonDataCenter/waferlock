@@ -111,7 +111,7 @@ release: all
 	touch $(RELSTAGEDIR)/site/.do-not-delete-me
 	mkdir -p $(RELSTAGEDIR)/root
 	mkdir -p $(RELSTAGEDIR)/root/$(PREFIX)/etc
-	cp	$(ROOT)/etc/ipf.conf \
+	cp	$(ROOT)/etc/pg_hba.conf \
 		$(RELSTAGEDIR)/root/$(PREFIX)/etc
 	cp -r   $(ROOT)/lib \
 		$(ROOT)/server.js \

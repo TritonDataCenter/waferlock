@@ -5,6 +5,12 @@
 			{"address": "127.0.0.1", "port": 2181}
 		]
 	},
+	"pg_hba": {
+		"path": "/manatee/pg/data/pg_hba.conf",
+		"pidFile": "/manatee/pg/data/postmaster.pid",
+		"statInterval": 5,
+		"hupInterval": 10
+	},
 	"holdTime": 30,
 	"paths": [
 		"/foo",

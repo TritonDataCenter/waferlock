@@ -9,6 +9,13 @@
 		]
 	},
 
+	"pg_hba": {
+		"path": "/manatee/pg/data/pg_hba.conf",
+		"pidFile": "/manatee/pg/data/postmaster.pid",
+		"statInterval": 5,
+		"hupInterval": 10
+	},
+
 	"holdTime": 600,
 
 	{{! The SAPI polling interval can be shortened when ipmon shows
