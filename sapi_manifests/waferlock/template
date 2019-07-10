@@ -21,8 +21,8 @@
 	{{! The SAPI polling interval can be shortened when ipmon shows
 	    denials are taking place. }}
 	"sapiPollingInterval": {
-		"max": 240,	{{! Poll at least once every 240s }}
-		"min": 30	{{! Never poll more than once every 30s }}
+		"max": 1800,	{{! Poll at least once every 1800s }}
+		"min": 300	{{! Never poll more than once every 300s }}
 	},
 
 	{{! "dns_domain" being set means we are in Triton (not Manta) }}
@@ -38,7 +38,7 @@
 			"zookeeper.{{{datacenter_name}}}.{{{dns_domain}}}"
 		],
 		"sapi_url": "{{{sapi-url}}}",
-		"sapi_services": ["sdc/moray"],
+		"sapi_services": ["sdc/moray", "sdc/manatee"],
 		"dns_domain": "{{{dns_domain}}}"
 	{{/dns_domain}}
 	{{^dns_domain}}
@@ -52,7 +52,7 @@
 			"nameservice.{{{DOMAIN_NAME}}}"
 		],
 		"sapi_url": "{{{SAPI_URL}}}",
-		"sapi_services": ["manta/moray"],
+		"sapi_services": ["manta/moray", "manta/postgres"],
 		"shard": "{{{SHARD}}}",
 		"dns_domain": "{{{DNS_DOMAIN}}}"
 	{{/dns_domain}}
