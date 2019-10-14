@@ -55,6 +55,7 @@
 		"sapi_services": [
 			"manta/moray",
 			"manta/postgres",
+			"manta/boray",
 			"manta/buckets-postgres"
 		],
 		"shard": "{{{SHARD}}}",
