@@ -39,7 +39,6 @@ pipeline {
 set -o errexit
 set -o pipefail
 
-export ENGBLD_BITS_UPLOAD_IMGAPI=true
 make print-BRANCH print-STAMP all release publish bits-upload''')
             }
         }
