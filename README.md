@@ -23,14 +23,16 @@ limit access to the running postgres to those IPs explicitly allowed access.
 
 The mechanism for access control is PostgreSQL's
 [pg_hba.conf](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html)
-file. (HBA stands for host-based authentication.) Waferlock maintains
-"/manatee/pg/data/pg_hba.conf" and HUPs postgres when that changes. IPs are
-fetch from two sources:
+file. (HBA stands for host-based authentication.) Waferlock updates
+"/manatee/pg/data/pg_hba.conf" with the set of allowed IPs and HUPs postgres
+when that changes. The set of IPs to allow are monitored (via polling) from two
+sources:
 
-1. Waferlock polls SAPI for instances of configured service names
-   (`sapi_services` config var).
+1. Waferlock polls SAPI for current instances of configured service names
+   (`sapi_services` config var in the [config
+   template](./sapi_manifests/waferlock/template)).
 2. Waferlock polls ZK for domain nodes of configured domain names (`domains`
-   config var).
+   config var in the [config template](./sapi_manifests/waferlock/template)).
 
 
 The written config file is a [base config file](./etc/pg_hba.conf) plus
