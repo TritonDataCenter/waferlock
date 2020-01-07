@@ -44,9 +44,9 @@ make print-BRANCH print-STAMP all release publish bits-upload''')
         }
         stage('manatee') {
             // TODO: Consider complex handling of multiple branches
-            //when {
-            //    branch 'master'
-            //}
+            when {
+                branch 'master'
+            }
             steps {
                 build(job:'joyent-org/manta-manatee/master', wait: false)
                 build(job:'joyent-org/sdc-manatee/master', wait: false)
