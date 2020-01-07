@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2019 Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 @Library('jenkins-joylib@v1.0.3') _
@@ -40,6 +40,16 @@ set -o errexit
 set -o pipefail
 
 make print-BRANCH print-STAMP all release publish bits-upload''')
+            }
+        }
+        stage('manatee') {
+            // TODO: Consider complex handling of multiple branches
+            when {
+                branch 'master'
+            }
+            steps {
+                build(job:'joyent-org/manta-manatee/master', wait: false)
+                build(job:'joyent-org/sdc-manatee/master', wait: false)
             }
         }
     }
