@@ -34,6 +34,7 @@
   "devDependencies": {
     "eslint": "4.19.1",
     "eslint-plugin-joyent": "~2.0.0",
+    "esquery": "1.1.0",
     "tape": "^4.9.1"
   }
 }
