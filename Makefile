@@ -6,6 +6,7 @@
 
 #
 # Copyright (c) 2019, Joyent, Inc.
+# Copyright 2023 MNX Cloud, Inc.
 #
 
 NAME = waferlock
@@ -55,7 +56,7 @@ include ./deps/eng/tools/mk/Makefile.smf.defs
 # binary as part of the build process.  Other options are possible -- it depends
 # on the need of your repository.
 #
-NODE_PREBUILT_VERSION =	v4.9.0
+NODE_PREBUILT_VERSION =	v6.17.0
 NODE_PREBUILT_IMAGE = 18b094b0-eb01-11e5-80c1-175dac7ddf02
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_TAG = gz

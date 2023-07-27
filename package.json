@@ -1,6 +1,6 @@
 {
   "name": "waferlock",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "In-zone firewall control agent for manatee zones",
   "main": "server.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "dependencies": {
     "assert-plus": "^1.0.0",
     "bunyan": "^1.8.12",
-    "cueball": "git+https://github.com/joyent/node-cueball.git#v2.10.2",
+    "cueball": "git+https://github.com/joyent/node-cueball.git#v2.10.3",
     "forkexec": "^1.1.0",
     "ipaddr.js": "^1.7.0",
     "lstream": "0.0.4",
