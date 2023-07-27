@@ -1,6 +1,6 @@
 {
   "name": "waferlock",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "In-zone firewall control agent for manatee zones",
   "main": "server.js",
   "scripts": {
