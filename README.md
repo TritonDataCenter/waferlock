@@ -6,20 +6,22 @@
 
 <!--
     Copyright 2019 Joyent, Inc.
+    Copyright 2024 MNX Cloud, Inc.
 -->
 
 # waferlock
 
-This repository is part of the Joyent Triton and Manta projects.
+This repository is part of the Triton Data Center and Manta projects.
 For contribution guidelines, issues, and general documentation, visit the main
-[Triton](http://github.com/joyent/triton) and
-[Manta](http://github.com/joyent/manta) project pages.
+[Triton](http://github.com/TritonDataCenter/triton) and
+[Manta](http://github.com/TritonDataCenter/manta) project pages.
 
 
 Waferlock is a node.js process that runs inside a Triton or Manta
-[manatee](https://github.com/joyent/manatee/) zone ("manatee" service instances
-in Triton, "postgres" and "buckets-postgres" service instances in Manta) to
-limit access to the running postgres to those IPs explicitly allowed access.
+[manatee](https://github.com/TritonDataCenter/manatee/) zone ("manatee" service
+instances in Triton, "postgres" and "buckets-postgres" service instances in
+Manta) to limit access to the running postgres to those IPs explicitly allowed
+access.
 
 The mechanism for access control is PostgreSQL's
 [pg_hba.conf](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html)
