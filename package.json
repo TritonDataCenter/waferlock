@@ -1,6 +1,6 @@
 {
   "name": "waferlock",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "In-zone firewall control agent for manatee zones",
   "main": "server.js",
   "scripts": {
@@ -9,19 +9,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joyent/waferlock.git"
+    "url": "git+https://github.com/TritonDataCenter/waferlock.git"
   },
-  "author": "Joyent (joyent.com)",
+  "author": "MNX Cloud (mnx.io)",
   "private": true,
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/joyent/waferlock/issues"
+    "url": "https://github.com/TritonDataCenter/waferlock/issues"
   },
-  "homepage": "https://github.com/joyent/waferlock#readme",
+  "homepage": "https://github.com/TritonDataCenter/waferlock#readme",
   "dependencies": {
     "assert-plus": "^1.0.0",
     "bunyan": "^1.8.12",
-    "cueball": "git+https://github.com/joyent/node-cueball.git#v2.10.3",
+    "cueball": "git+https://github.com/TritonDataCenter/node-cueball.git#v2.10.3",
     "forkexec": "^1.1.0",
     "ipaddr.js": "^1.7.0",
     "lstream": "0.0.4",
